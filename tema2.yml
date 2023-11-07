@@ -1,0 +1,61 @@
+#!/usr/local/bin/kas
+header:
+  version: 12
+
+# use generic qemu armv7 base
+machine: qemuarm
+distro: poky
+target:
+  - core-image-base
+
+repos:
+  # TODO: create your layer(s)
+  meta-tema2:
+      path: './meta-tema2'
+
+  # Official RaspberryPI meta layer
+  meta-raspberrypi:
+    url: git://git.yoctoproject.org/meta-raspberrypi
+    path: layers/meta-raspberrypi
+    refspec: kirkstone
+
+  # Poky reference distribution (Kirkstone, May 2022 )
+  poky:
+    url: git://git.yoctoproject.org/poky
+    path: layers/poky
+    refspec: kirkstone
+    layers:
+      meta:
+      meta-poky:
+      meta-yocto-bsp:
+
+# prepend those lines to the generated bblayers.conf
+bblayers_conf_header:
+  standard: |
+    POKY_BBLAYERS_CONF_VERSION = "2"
+    BBPATH = "${TOPDIR}"
+    BBFILES ?= ""
+
+# prepend those lines to the generated local.conf
+local_conf_header:
+  tmp_dirs: |
+    # temporary dirs
+    DL_DIR = "/home/student/tmp/downloads"
+    SSTATE_DIR = "/home/student/sstate-cache"
+  reduce_diskspace: |
+    INHERIT += "rm_work_and_downloads"
+  # important: allows root login from console
+  debug_tweaks: |
+    EXTRA_IMAGE_FEATURES = "debug-tweaks"
+  # Monitors disk space and available inodes during the build
+  diskmon: |
+    BB_DISKMON_DIRS = "\
+        STOPTASKS,${TMPDIR},1G,100K \
+        STOPTASKS,${DL_DIR},1G,100K \
+        STOPTASKS,${SSTATE_DIR},1G,100K \
+        STOPTASKS,/tmp,100M,100K \
+        HALT,${TMPDIR},100M,1K \
+        HALT,${DL_DIR},100M,1K \
+        HALT,${SSTATE_DIR},100M,1K \
+        HALT,/tmp,10M,1K"
+
